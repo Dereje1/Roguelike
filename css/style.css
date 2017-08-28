@@ -20,7 +20,7 @@ body .container-fluid #elementHolder .Elemental {
   float: left;
   background-color: white;
   display: inline-block;
-  border-style: solid;
+  border-style: none;
   border-width: 0.5px;
   vertical-align: top;
 }

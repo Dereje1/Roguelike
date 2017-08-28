@@ -1,14 +1,14 @@
-let allDisjoint=[]
-let finalwalls=''
+
 function cellAutomata(boxSize){
   let allWalls = initialWall(boxSize,0.45);
   for (let i=0;i<5;i++){
     allWalls = findWalledCells(allWalls,boxSize,i)
   }
-  finalwalls=allWalls.slice()
-  floodFill(allWalls,boxSize)
-  return allWalls;
+  let floodFilledWalls = floodFill(allWalls,boxSize);
+  console.log(floodFilledWalls.length/Math.pow(boxSize,2))
+  return floodFilledWalls;
 }
+
 function findWalledCells(allWalls,boxSize,i){
   //function returns new state of live cells on board
   let newState=[];
@@ -38,8 +38,8 @@ function findWalledCells(allWalls,boxSize,i){
                 }
             break;
           default:
-              if(totalwalledNb>=5){
-                newState.push(cellId)
+                if(totalwalledNb>=5){
+                  newState.push(cellId)
               }
         }
 
@@ -51,7 +51,6 @@ function findWalledCells(allWalls,boxSize,i){
 
 function walledNeighbours(cell,alive,boxSize){//finds live neighbours for a given cell
     //first needs to find all 8 neighbours
-
     //then test to see if any of them are alive, if so send total count
     let filteredNeigbhours=possibleNeighbours(cell,boxSize).filter(function(z){
      if(alive.includes(z)){return z}
@@ -100,7 +99,6 @@ function possibleNeighbours(cell,boxSize,wrap=true){
   })
   return possibleNeighbours;
 }
-
 function initialWall(boxSize,p){
   let newState=[]
   for(let i=0;i<boxSize;i++){
@@ -112,8 +110,8 @@ function initialWall(boxSize,p){
   }
   return newState;
 }
-
 function floodFill(allwalls,boxSize){
+  let allDisjoint=[];
   let disjoint=[];
   let copyOfWalls = allwalls.slice()
   let openSpace=0;
@@ -121,64 +119,86 @@ function floodFill(allwalls,boxSize){
     for(let j=0;j<boxSize;j++){
       let stringCoords = i.toString()+"_"+j.toString();
       if(!copyOfWalls.includes(stringCoords)){//it's a floorspace found
-          //new open space
+          //new open space reset old
           disjoint=[]
-          openSpaceCloser(stringCoords)
+          //run recursive function on open space
+          pathWayFinder(stringCoords)
+          //push into all open space array once recursive function is done
           allDisjoint.push(disjoint)
       }
     }
   }
+  //floodFillTroublShoot(allwalls,allDisjoint)
+  return findBestPath()
 
-  function openSpaceCloser(floorId){
+  function findBestPath(){
+    let longestPathWay=0;
+    let floodFilledWalls =[]
+    let disjointArrLength=allDisjoint.map(function(pathway){
+      return pathway.length
+    })
+    let longestArr = allDisjoint[disjointArrLength.indexOf(Math.max.apply(null,disjointArrLength))]
+
+    for(let i=0;i<boxSize;i++){
+      for(let j=0;j<boxSize;j++){
+        let stringCoords = i.toString()+"_"+j.toString();
+          if(!longestArr.includes(stringCoords)){
+            floodFilledWalls.push(stringCoords)
+          }
+        }
+      }
+      return floodFilledWalls
+    }
+  function pathWayFinder(floorId){
+      //discount open floor
       copyOfWalls.push(floorId)
+      //account open floor
       if(!disjoint.includes(floorId)){disjoint.push(floorId)}
-
+      //find all possible neighbours without wraping considerations
       let n = possibleNeighbours(floorId,boxSize,false)
       //exclude walled neighbours
       let floorNeighbours=n.filter(function(z){
         if(!copyOfWalls.includes(z)){return z;}
       });
-      //console.log("openSpace ID " + openSpaceId + " FlooR ID "+ floorId)
-      //console.log(floorNeighbours)
+      //if open Neigbhours still exist run this function again
       if (floorNeighbours.length!==0){
         for (let u=0;u<floorNeighbours.length;u++){
-          openSpaceCloser(floorNeighbours[u])
+          pathWayFinder(floorNeighbours[u])
         }
       }
-      else{
+      else{//otherwise done , go to next pathway
         return;
       }
   }
 }
-$( document ).ready(function() {
-  floodFillTroublShoot()
-});
-
-function floodFillTroublShoot(){
-  let colors = ["green","yellow","red","purple","orange"]
-  let painted=[]
-  console.log( "ready!" );
-  for (let z=0;z<allDisjoint.length;z++){
-    let randomColor= colors[Math.floor(Math.random() * colors.length)]
-    for(let q=0;q<allDisjoint[z].length;q++){
-      let disjointCell = allDisjoint[z][q];
-      if(finalwalls.includes(disjointCell)){
-        console.log("Warning " + disjointCell + "Is already a Wall")
-        break;
-      }
-      else{
-        if(painted.includes(disjointCell)){
-          console.log(disjointCell + " Has already been painted!!")
+function floodFillTroublShoot(finalwalls,allDisjoint){
+  //run this function to trouble shoot the flood filling techniques
+  $( document ).ready(function() {
+    let colors = ["green","yellow","red","purple","orange"]
+    let painted=[]
+    console.log( "ready!" );
+    for (let z=0;z<allDisjoint.length;z++){
+      let randomColor= colors[Math.floor(Math.random() * colors.length)]
+      for(let q=0;q<allDisjoint[z].length;q++){
+        let disjointCell = allDisjoint[z][q];
+        if(finalwalls.includes(disjointCell)){
+          console.log("Warning " + disjointCell + "Is already a Wall")
+          break;
         }
         else{
-          painted.push(disjointCell)
-          $("#"+disjointCell).css("background-color", randomColor)
-          if(q===allDisjoint[z].length-1){colors.splice(colors.indexOf(randomColor),1)}
+          if(painted.includes(disjointCell)){
+            console.log(disjointCell + " Has already been painted!!")
+          }
+          else{
+            painted.push(disjointCell)
+            $("#"+disjointCell).css("background-color", randomColor)
+            if(q===allDisjoint[z].length-1){colors.splice(colors.indexOf(randomColor),1)}
+          }
         }
       }
     }
-  }
-  console.log(finalwalls)
-  console.log(allDisjoint)
-  //$("#9_0").css("background-color", "yellow")
+    console.log(finalwalls)
+    console.log(allDisjoint)
+    //$("#9_0").css("background-color", "yellow")
+  });
 }

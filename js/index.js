@@ -4,8 +4,8 @@ class Main extends React.Component{
     this.state={
       walls:[],//array collects all live cell positions
       generations:0,//generation counter
-      holderSize:500,
-      elementSize:10,//grid elements per board
+      holderSize:800,
+      elementSize:40,//grid elements per board
 
       player:'0_0',
     }
