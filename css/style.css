@@ -1,0 +1,36 @@
+body {
+  margin-top: 20px;
+  background-color: #252525;
+  margin-bottom: 2em;
+}
+
+body .container-fluid {
+  margin-left: 5%;
+  margin-right: 5%;
+}
+
+body .container-fluid #elementHolder {
+  margin: 0 auto;
+  background-color: grey;
+}
+
+body .container-fluid #elementHolder .Elemental {
+  margin: 0px;
+  padding: 0px;
+  float: left;
+  background-color: white;
+  display: inline-block;
+  border-style: solid;
+  border-width: 0.5px;
+  vertical-align: top;
+}
+
+body .container-fluid #info {
+  margin-top: 30px;
+  color: white;
+}
+
+body .container-fluid #info a, body .container-fluid #info a:active, body .container-fluid #info a:hover, body .container-fluid #info a:visited, body .container-fluid #info a:active, body .container-fluid #info a:hover {
+  color: yellow;
+  text-decoration: none;
+}
