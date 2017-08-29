@@ -12,10 +12,12 @@ body .container-fluid {
 body .container-fluid #elementHolder {
   margin: 0 auto;
   background-color: grey;
+  overflow: visible;
 }
 
 body .container-fluid #elementHolder .Elemental {
   margin: 0px;
+  position: relative;
   padding: 0px;
   float: left;
   background-color: white;

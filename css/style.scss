@@ -13,18 +13,18 @@ body{
       #elementHolder{
         margin: 0 auto;
         background-color: grey;
-
-        .Elemental{
-          margin:0px;
-          padding: 0px;
-          float: left;
-          background-color: white;
-          display: inline-block;
-          border-style: none;
-          border-width: 0.5px;
-          vertical-align: top;
-        }
-
+        overflow:visible;
+          .Elemental{
+            margin:0px;
+            position:relative;
+            padding: 0px;
+            float: left;
+            background-color: white;
+            display: inline-block;
+            border-style: none;
+            border-width: 0.5px;
+            vertical-align: top;
+          }
       }
       #info{
         margin-top: 30px;

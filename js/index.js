@@ -7,7 +7,8 @@ class Main extends React.Component{
       holderSize:800,
       elementSize:40,//grid elements per board
 
-      player:'0_0',
+      positionsOccupied:{},
+      allPoints:{}
     }
     //user click cell change
   }
@@ -16,34 +17,82 @@ class Main extends React.Component{
   }
   componentWillMount(){
     console.log("about to mount")
-    let findWalls = cellAutomata(this.state.elementSize);
-
+    let walls = cellAutomata(this.state.elementSize);
+    let wallPercent = walls.length/Math.pow(this.state.elementSize,2)
+    console.log(wallPercent)
+    while (wallPercent>0.5){
+      walls = cellAutomata(this.state.elementSize);
+      wallPercent = walls.length/Math.pow(this.state.elementSize,2)
+      console.log(wallPercent)
+    }
+    let allOccupiedPositions = this.placeGameObjects(walls);
+    let points = this.pointsAssement(true)
     this.setState({
-      walls:findWalls,
-      player:this.placeRandomObject(findWalls)
+      walls:walls,
+      positionsOccupied:allOccupiedPositions,
+      allPoints:points
     })
   }
-  placeRandomObject(walls){
-    let areaCovered = Math.pow(this.state.elementSize,2)
-    for (let i=0;i<areaCovered;i++){
-      let y = Math.floor(Math.random() * this.state.elementSize)
-      let x = Math.floor(Math.random() * this.state.elementSize)
-      let stringCoords = y.toString()+"_"+x.toString()
-      if(!walls.includes(stringCoords)){
-        return stringCoords;
+  placeGameObjects(walls){
+    let boxSizeArray = Array.apply(null, {length: this.state.elementSize}).map(Number.call, Number)
+    let allOccupied=[]
+    let positions={}
+
+
+    randomFind()
+    function randomFind(){
+        if(allOccupied.length===13){return;}
+        let y = boxSizeArray[Math.floor(Math.random() * boxSizeArray.length)]
+        let x = boxSizeArray[Math.floor(Math.random() * boxSizeArray.length)]
+        let stringCoords = y.toString()+"_"+x.toString()
+        if(!walls.includes(stringCoords)){
+          if(!allOccupied.includes(stringCoords)){
+            allOccupied.push(stringCoords)
+          }
+        }
+        randomFind()
+    }
+    let food=[], enemies=[]
+    let player = allOccupied.shift();
+    let copyOccupied = allOccupied.slice();//copy because I want this value also in the state object
+    for(let i=0;i<5;i++){food.push(copyOccupied.shift())}
+    for(let i=0;i<5;i++){enemies.push(copyOccupied.shift())}
+    let weapon = copyOccupied.shift()
+    let dungeon = copyOccupied.shift()
+
+
+    positions.player = player;
+    positions.food = food;
+    positions.enemies = enemies;
+    positions.weapon = weapon;
+    positions.dungeon = dungeon;
+    positions.allPositions = allOccupied;
+
+    return positions
+  }
+  pointsAssement(newgame=false){
+    let points={}
+    if(newgame){
+      points={
+        health:100,
+        weapon:"Stick",
+        attack:7,
+        level:0,
+        nextLevel:60,
+        dungeon:0,
+        levelMultiplier:1
       }
     }
-    placeRandomObject(walls)
+    return points;
   }
-
   playerMovement(e){
-
-    let currentPlayerPosition = this.state.player.split("_").map(function(z){
+    let positionsCopy = JSON.parse(JSON.stringify(this.state.positionsOccupied))
+    let currentPlayerPosition = positionsCopy.player.split("_").map(function(z){
       return parseInt(z,10)
     });
 
     let newPosition=[]
-    console.log(currentPlayerPosition)
+    //console.log(currentPlayerPosition)
     switch (e.keyCode) {
       case 40:
         //console.log("Player Down")
@@ -62,34 +111,84 @@ class Main extends React.Component{
         newPosition=[currentPlayerPosition[0],currentPlayerPosition[1]-1]
         break;
       default:
+        newPosition=currentPlayerPosition
         console.log("Non arrow key press")
     }
-    console.log(newPosition)
+    //console.log(newPosition)
+    //this.visibleArea(currentPlayerPosition,newPosition)
     let newPositionString = newPosition[0]+"_"+newPosition[1];
     if(this.state.walls.includes(newPositionString)){
-      console.log("out of bounds")
+      //console.log("out of bounds")
+      return;
+    }
+    if(positionsCopy.allPositions.includes(newPositionString)){
+      //console.log("out of bounds")
+      this.gamePlay(positionsCopy,newPositionString)
       return;
     }
     if((newPosition[0]<0)||(newPosition[0]>this.state.elementSize-1)){
-      console.log("out of bounds")
+      //console.log("out of bounds")
       return;
     }
     if((newPosition[1]<0)||(newPosition[1]>this.state.elementSize-1)){
-      console.log("out of bounds")
+      //console.log("out of bounds")
       return;
     }
-    $("#"+this.state.player).css("background-color", "white")
-
+    $("#"+positionsCopy.player).css("background-color", "white")
+    positionsCopy.player = newPositionString;
     this.setState({
-      player:newPositionString
+      positionsOccupied:positionsCopy
     })
     $("#"+newPositionString).css("background-color", "blue")
+  }
+
+  gamePlay(positionsObj,newpos){
+    let positionKeys = Object.keys(positionsObj)
+    let pointsCopy = JSON.parse(JSON.stringify(this.state.allPoints))
+    for(let i=0;i<positionKeys.length;i++){
+      if(positionKeys[i]==="allPositions"){continue}
+      if(positionsObj[positionKeys[i]].includes(newpos)){
+        console.log("this is a " + positionKeys[i])
+        switch (positionKeys[i]) {
+          case "food":
+            pointsCopy.health+=20
+            this.setState({
+              allPoints:pointsCopy
+            })
+            break;
+          case "weapon":
+            pointsCopy.attack = pointsCopy.attack +(pointsCopy.levelMultiplier*7)
+            pointsCopy.levelMultiplier++
+            if(pointsCopy.levelMultiplier===2){pointsCopy.weapon="Brass Knuckles"}
+            else if(pointsCopy.levelMultiplier===3){pointsCopy.weapon="Serrated Dagger"}
+            else if(pointsCopy.levelMultiplier===4){pointsCopy.weapon="Katana"}
+            else if(pointsCopy.levelMultiplier===5){pointsCopy.weapon="Reaper's Scythe"}
+            else{pointsCopy.weapon="Large Trout"}
+            this.setState({
+              allPoints:pointsCopy
+            })
+            break;
+          default:
+
+        }
+      }
+    }
+  }
+  visibleArea(oldposition,newPosition){
+      let newPositionString = "#"+newPosition[0]+"_"+newPosition[1];
+      console.log("Div Holder Position ")
+      console.log($("#elementHolder").position())
+      console.log("player Position ")
+      console.log($(newPositionString).position())
+      if(newPosition[0]!==oldposition[0]){
+        $("#elementHolder").scrollTop($(newPositionString).position().top-this.state.elementSize);
+      }
   }
 
   render(){
     let holderStyling={
       width:this.state.holderSize,
-      height: this.state.holderSize
+      height: this.state.holderSize/2
     }
     return(
       <div>
@@ -97,15 +196,17 @@ class Main extends React.Component{
             <GridMaker
               holderSize ={this.state.holderSize}
               elementSize={this.state.elementSize}
-              player={this.state.player}
+              positions={this.state.positionsOccupied}
               walls = {this.state.walls}
               cellRef={(input) => this.x = input }
-            />
+            >
+            </GridMaker>
         </div>
       </div>
     )
   }
 }
+
 class GridMaker extends React.Component{
   constructor(props){
     super(props)
@@ -116,7 +217,7 @@ class GridMaker extends React.Component{
   elementbuilder(){
     //builds all cells
     console.log("rendering all Grid Elements")
-    console.log(this.props.player)
+    console.log(this.props.positions)
     let x=[],bcol;
     //find element width
     let elementWidth = (this.props.holderSize/this.props.elementSize).toString()+"px"
@@ -126,7 +227,11 @@ class GridMaker extends React.Component{
           let idConstruct = i.toString()+"_"+j.toString();
           //set color of cell if alive
           if(this.props.walls.includes(idConstruct)){bcol="grey"}
-          else if(idConstruct===this.props.player){bcol="blue"}
+          else if(idConstruct===this.props.positions.player){bcol="blue"}
+          else if(idConstruct===this.props.positions.weapon){bcol="orange"}
+          else if(idConstruct===this.props.positions.dungeon){bcol="purple"}
+          else if(this.props.positions.food.includes(idConstruct)){bcol="green"}
+          else if(this.props.positions.enemies.includes(idConstruct)){bcol="red"}
           else{bcol="white"}
           //construct jsx and push
           let stylingDef = {background: bcol,

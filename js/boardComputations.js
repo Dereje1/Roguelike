@@ -1,11 +1,11 @@
 
 function cellAutomata(boxSize){
-  let allWalls = initialWall(boxSize,0.45);
+  let allWalls = initialWall(boxSize,0.50);
   for (let i=0;i<5;i++){
     allWalls = findWalledCells(allWalls,boxSize,i)
   }
   let floodFilledWalls = floodFill(allWalls,boxSize);
-  console.log(floodFilledWalls.length/Math.pow(boxSize,2))
+
   return floodFilledWalls;
 }
 
