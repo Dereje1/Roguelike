@@ -17,20 +17,20 @@ class Main extends React.Component{
 
   componentWillMount(){
     console.log("will mount")
-    this.newGridLoad()
+    this.newGridLoad(true)
   }
-  newGridLoad(){
-
+  newGridLoad(fresh=false){
+    console.log("making caves")
     let walls = cellAutomata(this.state.elementSize);
     let wallPercent = walls.length/Math.pow(this.state.elementSize,2)
-    console.log("making caves")
     while (wallPercent>0.5){
       walls = cellAutomata(this.state.elementSize);
       wallPercent = walls.length/Math.pow(this.state.elementSize,2)
     }
     console.log("finished caves")
     let allOccupiedPositions = this.placeGameObjects(walls);
-    let points = this.pointsAssement(true)
+    let points = this.pointsAssement(fresh)
+    console.log("Points =" + points)
     this.setState({
       walls:walls,
       positionsOccupied:allOccupiedPositions,
@@ -38,6 +38,7 @@ class Main extends React.Component{
       dungeonChange:false
     })
   }
+
   placeGameObjects(walls){
     let boxSizeArray = Array.apply(null, {length: this.state.elementSize}).map(Number.call, Number)
     let allOccupied=[]
@@ -93,7 +94,6 @@ class Main extends React.Component{
   }
   playerMovement(e){
     e.preventDefault()
-    console.log(!this.state.positionsOccupied)
     let positionsCopy = JSON.parse(JSON.stringify(this.state.positionsOccupied))
     let currentPlayerPosition = positionsCopy.player.split("_").map(function(z){
       return parseInt(z,10)
@@ -129,21 +129,26 @@ class Main extends React.Component{
       //console.log("out of bounds")
       return;
     }
-
-    if((newPosition[0]<0)||(newPosition[0]>this.state.elementSize-1)){
-      //console.log("out of bounds")
-      return;
-    }
-    if((newPosition[1]<0)||(newPosition[1]>this.state.elementSize-1)){
-      //console.log("out of bounds")
-      return;
-    }
-    $("#"+positionsCopy.player).css("background-color", "white")
-    if(positionsCopy.allPositions.includes(newPositionString)){
+    else if(positionsCopy.allPositions.includes(newPositionString)){
       //console.log("out of bounds")
       this.gamePlay(positionsCopy,newPositionString)
       return;
     }
+
+    else if((newPosition[0]<0)||(newPosition[0]>this.state.elementSize-1)){
+      //console.log("out of bounds")
+      return;
+    }
+    else if((newPosition[1]<0)||(newPosition[1]>this.state.elementSize-1)){
+      //console.log("out of bounds")
+      return;
+    }
+    else{this.setNewPosition(positionsCopy,newPositionString)}
+  }
+
+  setNewPosition(positionsCopy,newPositionString){
+    $("#"+positionsCopy.player).css("background-color", "white")
+
     positionsCopy.player = newPositionString;
     this.setState({
       positionsOccupied:positionsCopy
@@ -154,6 +159,7 @@ class Main extends React.Component{
   gamePlay(positionsObj,newpos){
     let positionKeys = Object.keys(positionsObj)
     let pointsCopy = JSON.parse(JSON.stringify(this.state.allPoints))
+    let indexOfAllPositions = positionsObj.allPositions.indexOf(newpos)
     for(let i=0;i<positionKeys.length;i++){
       if(positionKeys[i]==="allPositions"){continue}
       if(positionsObj[positionKeys[i]].includes(newpos)){
@@ -164,6 +170,10 @@ class Main extends React.Component{
             this.setState({
               allPoints:pointsCopy
             })
+            positionsObj.allPositions.splice(indexOfAllPositions,1)
+            let indexOfFood = positionsObj.food.indexOf(newpos)
+            positionsObj.food.splice(indexOfFood,1)
+            this.setNewPosition(positionsObj,newpos)
             break;
           case "weapon":
             pointsCopy.attack = pointsCopy.attack +(pointsCopy.levelMultiplier*7)
@@ -176,6 +186,8 @@ class Main extends React.Component{
             this.setState({
               allPoints:pointsCopy
             })
+            positionsObj.allPositions.splice(indexOfAllPositions,1)
+            this.setNewPosition(positionsObj,newpos)
             break;
           case "dungeon":
             pointsCopy.dungeon++;
@@ -209,7 +221,7 @@ class Main extends React.Component{
     }
     return(
       <div>
-        <div key="x" id="elementHolder" tabIndex="0" style={holderStyling} onKeyDown={(e)=>this.playerMovement(e)}>
+        <div key={this.state.dungeonChange} id="elementHolder" tabIndex="0" style={holderStyling} onKeyDown={(e)=>this.playerMovement(e)}>
             <GridMaker
               refresh = {this.state.dungeonChange}
               holderSize ={this.state.holderSize}
@@ -236,7 +248,7 @@ class GridMaker extends React.Component{
   componentDidUpdate(){
     this.props.loadSignalBack()
   }
-  shouldComponentUpdate(nextProps){
+  shouldComponentUpdate(props,nextProps){
     if(this.props.refresh){return true;}
     else{return false;}
   }
