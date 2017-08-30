@@ -9,7 +9,10 @@ body{
   .container-fluid{
     margin-left: 5%;
     margin-right: 5%;
-
+      #displayStats{
+        text-align: center;
+        color:white;
+      }
       #elementHolder{
         margin: 0 auto;
         background-color: grey;
@@ -21,7 +24,8 @@ body{
             float: left;
             background-color: white;
             display: inline-block;
-            border-style: none;
+            border-style: solid;
+            border-radius: 0.5px;
             border-width: 0.5px;
             vertical-align: top;
           }

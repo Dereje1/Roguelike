@@ -9,6 +9,11 @@ body .container-fluid {
   margin-right: 5%;
 }
 
+body .container-fluid #displayStats {
+  text-align: center;
+  color: white;
+}
+
 body .container-fluid #elementHolder {
   margin: 0 auto;
   background-color: grey;
@@ -22,7 +27,8 @@ body .container-fluid #elementHolder .Elemental {
   float: left;
   background-color: white;
   display: inline-block;
-  border-style: none;
+  border-style: solid;
+  border-radius: 0.5px;
   border-width: 0.5px;
   vertical-align: top;
 }
