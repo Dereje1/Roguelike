@@ -3,41 +3,47 @@ class Main extends React.Component{
     super(props)
     this.state={
       walls:[],//array collects all live cell positions
-      generations:0,//generation counter
       holderSize:800,
       elementSize:40,//grid elements per board
 
       positionsOccupied:{},
-      allPoints:{}
+      allPoints:{},
+      dungeonChange: false
     }
-    //user click cell change
+    this.newGridLoad=this.newGridLoad.bind(this)
+    this.gamePlay=this.gamePlay.bind(this)
+    this.placeGameObjects=this.placeGameObjects.bind(this)
   }
-  componentDidMount(){
-    //on mount set random cells
-  }
+
   componentWillMount(){
-    console.log("about to mount")
+    console.log("will mount")
+    this.newGridLoad()
+  }
+  newGridLoad(){
+
     let walls = cellAutomata(this.state.elementSize);
     let wallPercent = walls.length/Math.pow(this.state.elementSize,2)
-    console.log(wallPercent)
+    console.log("making caves")
     while (wallPercent>0.5){
       walls = cellAutomata(this.state.elementSize);
       wallPercent = walls.length/Math.pow(this.state.elementSize,2)
-      console.log(wallPercent)
     }
+    console.log("finished caves")
     let allOccupiedPositions = this.placeGameObjects(walls);
     let points = this.pointsAssement(true)
     this.setState({
       walls:walls,
       positionsOccupied:allOccupiedPositions,
-      allPoints:points
+      allPoints:points,
+      dungeonChange:false
     })
   }
   placeGameObjects(walls){
     let boxSizeArray = Array.apply(null, {length: this.state.elementSize}).map(Number.call, Number)
     let allOccupied=[]
     let positions={}
-
+    let food=[], enemies=[]
+    let player="",weapon="",dungeon=""
 
     randomFind()
     function randomFind(){
@@ -52,13 +58,13 @@ class Main extends React.Component{
         }
         randomFind()
     }
-    let food=[], enemies=[]
-    let player = allOccupied.shift();
+
+    player = allOccupied.shift();
     let copyOccupied = allOccupied.slice();//copy because I want this value also in the state object
     for(let i=0;i<5;i++){food.push(copyOccupied.shift())}
     for(let i=0;i<5;i++){enemies.push(copyOccupied.shift())}
-    let weapon = copyOccupied.shift()
-    let dungeon = copyOccupied.shift()
+    weapon = copyOccupied.shift()
+    dungeon = copyOccupied.shift()
 
 
     positions.player = player;
@@ -86,6 +92,8 @@ class Main extends React.Component{
     return points;
   }
   playerMovement(e){
+    e.preventDefault()
+    console.log(!this.state.positionsOccupied)
     let positionsCopy = JSON.parse(JSON.stringify(this.state.positionsOccupied))
     let currentPlayerPosition = positionsCopy.player.split("_").map(function(z){
       return parseInt(z,10)
@@ -121,11 +129,7 @@ class Main extends React.Component{
       //console.log("out of bounds")
       return;
     }
-    if(positionsCopy.allPositions.includes(newPositionString)){
-      //console.log("out of bounds")
-      this.gamePlay(positionsCopy,newPositionString)
-      return;
-    }
+
     if((newPosition[0]<0)||(newPosition[0]>this.state.elementSize-1)){
       //console.log("out of bounds")
       return;
@@ -135,6 +139,11 @@ class Main extends React.Component{
       return;
     }
     $("#"+positionsCopy.player).css("background-color", "white")
+    if(positionsCopy.allPositions.includes(newPositionString)){
+      //console.log("out of bounds")
+      this.gamePlay(positionsCopy,newPositionString)
+      return;
+    }
     positionsCopy.player = newPositionString;
     this.setState({
       positionsOccupied:positionsCopy
@@ -168,6 +177,14 @@ class Main extends React.Component{
               allPoints:pointsCopy
             })
             break;
+          case "dungeon":
+            pointsCopy.dungeon++;
+            this.setState({
+              wall:[],
+              allPoints:pointsCopy,
+              dungeonChange:true
+            },this.newGridLoad())
+            break;
           default:
 
         }
@@ -192,13 +209,15 @@ class Main extends React.Component{
     }
     return(
       <div>
-        <div id="elementHolder" tabIndex="0" style={holderStyling} onKeyDown={(e)=>this.playerMovement(e)}>
+        <div key="x" id="elementHolder" tabIndex="0" style={holderStyling} onKeyDown={(e)=>this.playerMovement(e)}>
             <GridMaker
+              refresh = {this.state.dungeonChange}
               holderSize ={this.state.holderSize}
               elementSize={this.state.elementSize}
               positions={this.state.positionsOccupied}
               walls = {this.state.walls}
               cellRef={(input) => this.x = input }
+              loadSignalBack={()=>this.setState({dungeonChange:false})}
             >
             </GridMaker>
         </div>
@@ -211,13 +230,19 @@ class GridMaker extends React.Component{
   constructor(props){
     super(props)
   }
+  componentDidMount(){
+    this.props.loadSignalBack()
+  }
+  componentDidUpdate(){
+    this.props.loadSignalBack()
+  }
   shouldComponentUpdate(nextProps){
-    return false;
+    if(this.props.refresh){return true;}
+    else{return false;}
   }
   elementbuilder(){
     //builds all cells
     console.log("rendering all Grid Elements")
-    console.log(this.props.positions)
     let x=[],bcol;
     //find element width
     let elementWidth = (this.props.holderSize/this.props.elementSize).toString()+"px"
@@ -259,9 +284,7 @@ class Cell extends React.Component{
   constructor(props){
     super(props)
   }
-  testref(){
-  console.log("hello")
-  }
+
   render(){
     return(
             <span
