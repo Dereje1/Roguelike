@@ -12,7 +12,7 @@ body .container-fluid {
 body .container-fluid #elementHolder {
   margin: 0 auto;
   background-color: grey;
-  overflow: visible;
+  overflow: hidden;
 }
 
 body .container-fluid #elementHolder .Elemental {

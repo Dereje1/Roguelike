@@ -61,6 +61,12 @@ class Main extends React.Component{
     }
 
     player = allOccupied.shift();
+    let initialScroll = parseInt(player.split("_")[0],10) * 15;
+    if(initialScroll>(this.state.holderSize/2)){initialScroll=this.state.holderSize/2}
+    if(initialScroll<40){initialScroll=40}
+    console.log("starting Position "+ player)
+    console.log("initialScroll "+ initialScroll)
+    $("#elementHolder").scrollTop(initialScroll);
     let copyOccupied = allOccupied.slice();//copy because I want this value also in the state object
     for(let i=0;i<5;i++){food.push(copyOccupied.shift())}
     for(let i=0;i<5;i++){enemies.push(copyOccupied.shift())}
@@ -74,7 +80,7 @@ class Main extends React.Component{
     positions.weapon = weapon;
     positions.dungeon = dungeon;
     positions.allPositions = allOccupied;
-
+    positions.yScroll = initialScroll;
     return positions
   }
   pointsAssement(newgame=false){
@@ -100,15 +106,18 @@ class Main extends React.Component{
     });
 
     let newPosition=[]
-    //console.log(currentPlayerPosition)
+    let yScrollCopy = this.state.yScroll
+    console.log(currentPlayerPosition)
     switch (e.keyCode) {
       case 40:
         //console.log("Player Down")
         newPosition=[currentPlayerPosition[0]+1,currentPlayerPosition[1]]
+        positionsCopy.yScroll+=20;
         break;
       case 38:
         //console.log("Player Up")
         newPosition=[currentPlayerPosition[0]-1,currentPlayerPosition[1]]
+        positionsCopy.yScroll-=20;
         break;
       case 39:
         //console.log("Player Right")
@@ -123,7 +132,7 @@ class Main extends React.Component{
         console.log("Non arrow key press")
     }
     //console.log(newPosition)
-    //this.visibleArea(currentPlayerPosition,newPosition)
+
     let newPositionString = newPosition[0]+"_"+newPosition[1];
     if(this.state.walls.includes(newPositionString)){
       //console.log("out of bounds")
@@ -143,7 +152,7 @@ class Main extends React.Component{
       //console.log("out of bounds")
       return;
     }
-    else{this.setNewPosition(positionsCopy,newPositionString)}
+    else{this.setNewPosition(positionsCopy,newPositionString,yScrollCopy)}
   }
 
   setNewPosition(positionsCopy,newPositionString){
@@ -154,6 +163,7 @@ class Main extends React.Component{
       positionsOccupied:positionsCopy
     })
     $("#"+newPositionString).css("background-color", "blue")
+    $("#elementHolder").scrollTop(this.state.positionsOccupied.yScroll);
   }
 
   gamePlay(positionsObj,newpos){
@@ -162,6 +172,7 @@ class Main extends React.Component{
     let indexOfAllPositions = positionsObj.allPositions.indexOf(newpos)
     for(let i=0;i<positionKeys.length;i++){
       if(positionKeys[i]==="allPositions"){continue}
+      if(positionKeys[i]==="yScroll"){continue}
       if(positionsObj[positionKeys[i]].includes(newpos)){
         console.log("this is a " + positionKeys[i])
         switch (positionKeys[i]) {
@@ -204,13 +215,15 @@ class Main extends React.Component{
     }
   }
   visibleArea(oldposition,newPosition){
-      let newPositionString = "#"+newPosition[0]+"_"+newPosition[1];
+      let yDifferential = newPosition[0]-oldposition[0]
+      let playerPosition = $("#"+newPosition[0]+"_"+newPosition[1]).position();
+      if(!playerPosition){return}//out of bounds jquery returns undefined
       console.log("Div Holder Position ")
       console.log($("#elementHolder").position())
       console.log("player Position ")
-      console.log($(newPositionString).position())
-      if(newPosition[0]!==oldposition[0]){
-        $("#elementHolder").scrollTop($(newPositionString).position().top-this.state.elementSize);
+      console.log(playerPosition)
+      if(yDifferential!==0){
+        $("#elementHolder").scrollTop(this.state.yScroll);
       }
   }
 
