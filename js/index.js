@@ -67,7 +67,7 @@ class Main extends React.Component{
     player = allOccupied.shift();
     let initialScroll = parseInt(player.split("_")[0],10) * 15;
     if(initialScroll>(this.state.holderSize/2)){initialScroll=this.state.holderSize/2}
-    if(initialScroll<40){initialScroll=40}
+    if(initialScroll<40){initialScroll=0}
     console.log("starting Position "+ player)
     console.log("initialScroll "+ initialScroll)
     $("#elementHolder").scrollTop(initialScroll);
@@ -94,10 +94,11 @@ class Main extends React.Component{
         health:100,
         weapon:"Stick",
         attack:7,
-        level:0,
+        level:1,
         nextLevel:60,
         dungeon:0,
-        levelMultiplier:1
+        levelMultiplier:1,
+        totalEnemyPower:2500
       }
     }
     return points;
@@ -180,7 +181,7 @@ class Main extends React.Component{
         console.log("this is a " + positionKeys[i])
         switch (positionKeys[i]) {
           case "food":
-            pointsCopy.health+=20
+            pointsCopy.health+=30
             this.setState({
               allPoints:pointsCopy
             })
@@ -206,10 +207,38 @@ class Main extends React.Component{
           case "dungeon":
             pointsCopy.dungeon++;
             this.setState({
-              wall:[],
               allPoints:pointsCopy,
               dungeonChange:true
             },this.newGridLoad())
+            break;
+          case "enemies":
+            let damageInflicted = pointsCopy.attack*(pointsCopy.level/5);
+            let damageTaken = (pointsCopy.dungeon*4)+16;
+            let enemiesLeft = positionsObj.enemies.length
+
+            let totalBoardDamageLeft = enemiesLeft*((pointsCopy.dungeon*4)+16)
+            let predictiveDamage = damageInflicted*enemiesLeft
+            let enemiesLeftPercent = (enemiesLeft)/5
+            if(enemiesLeftPercent===1){enemiesLeftPercent=.9}
+            pointsCopy.totalEnemyPower-=damageInflicted;
+            pointsCopy.health-=damageTaken;
+            pointsCopy.nextLevel-=(pointsCopy.dungeon*20)+10;
+            if(pointsCopy.nextLevel<=0){
+              pointsCopy.level++;
+              pointsCopy.nextLevel = (pointsCopy.dungeon*10)+60
+            }
+            this.setState({
+              allPoints:pointsCopy
+            })
+            console.log("predictiveDamage " + predictiveDamage)
+            console.log("totalBoardDamageLeft " +totalBoardDamageLeft)
+            console.log("1-enemiesLeftPercent " + (1-enemiesLeftPercent))
+            if((predictiveDamage/totalBoardDamageLeft)>(1-enemiesLeftPercent)){
+              positionsObj.allPositions.splice(indexOfAllPositions,1)
+              let indexOfEnemy = positionsObj.enemies.indexOf(newpos)
+              positionsObj.enemies.splice(indexOfEnemy,1)
+              this.setNewPosition(positionsObj,newpos)
+            }
             break;
           default:
 
