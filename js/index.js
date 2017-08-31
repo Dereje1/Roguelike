@@ -5,10 +5,11 @@ class Main extends React.Component{
       walls:[],//array collects all live cell positions
       holderSize:800,
       elementSize:40,//grid elements per board
-
+      staging:"Loading Map",
       positionsOccupied:{},
       allPoints:{},
-      dungeonChange: false
+      dungeonChange: false,
+      modal:false
     }
     this.newGridLoad=this.newGridLoad.bind(this)
     this.gamePlay=this.gamePlay.bind(this)
@@ -23,23 +24,26 @@ class Main extends React.Component{
     $("#elementHolder").scrollTop(this.state.positionsOccupied.yScroll);
     $('#elementHolder').focus();
   }
+
   newGridLoad(fresh=false){
-    console.log("making caves")
+
+    console.log("making caves " + this.state.staging)
     let walls = cellAutomata(this.state.elementSize);
     let wallPercent = walls.length/Math.pow(this.state.elementSize,2)
     while (wallPercent>0.5){
       walls = cellAutomata(this.state.elementSize);
       wallPercent = walls.length/Math.pow(this.state.elementSize,2)
     }
-    console.log("finished caves")
+
     let allOccupiedPositions = this.placeGameObjects(walls);
     let points = this.pointsAssement(fresh)
-    console.log("Points =" + points)
+    console.log(points)
     this.setState({
       walls:walls,
       positionsOccupied:allOccupiedPositions,
       allPoints:points,
-      dungeonChange:false
+      dungeonChange:false,
+      staging:"Game Play"
     })
   }
 
@@ -48,7 +52,7 @@ class Main extends React.Component{
     let allOccupied=[]
     let positions={}
     let food=[], enemies=[]
-    let player="",weapon="",dungeon=""
+    let player="",weapon="",dungeon="",dragon=""
 
     randomFind()
     function randomFind(){
@@ -57,6 +61,9 @@ class Main extends React.Component{
         let x = boxSizeArray[Math.floor(Math.random() * boxSizeArray.length)]
         let stringCoords = y.toString()+"_"+x.toString()
         if(!walls.includes(stringCoords)){
+          if(allOccupied.length===0){//trying to center player
+          //  if((y<2)||(y>37)){randomFind()}
+          }
           if(!allOccupied.includes(stringCoords)){
             allOccupied.push(stringCoords)
           }
@@ -65,9 +72,9 @@ class Main extends React.Component{
     }
 
     player = allOccupied.shift();
-    let initialScroll = parseInt(player.split("_")[0],10) * 15;
-    if(initialScroll>(this.state.holderSize/2)){initialScroll=this.state.holderSize/2}
-    if(initialScroll<40){initialScroll=0}
+    let initialScroll = (parseInt(player.split("_")[0],10) * 20)-200;
+    if(initialScroll<0){initialScroll=0}
+    if(initialScroll>400){initialScroll=400}
     console.log("starting Position "+ player)
     console.log("initialScroll "+ initialScroll)
     $("#elementHolder").scrollTop(initialScroll);
@@ -75,19 +82,25 @@ class Main extends React.Component{
     for(let i=0;i<5;i++){food.push(copyOccupied.shift())}
     for(let i=0;i<5;i++){enemies.push(copyOccupied.shift())}
     weapon = copyOccupied.shift()
-    dungeon = copyOccupied.shift()
-
+    if (this.state.allPoints.dungeon===3){
+      dragon = copyOccupied.shift()
+    }
+    else{
+      dungeon = copyOccupied.shift()
+    }
 
     positions.player = player;
     positions.food = food;
     positions.enemies = enemies;
     positions.weapon = weapon;
     positions.dungeon = dungeon;
+    positions.dragon = dragon;
     positions.allPositions = allOccupied;
     positions.yScroll = initialScroll;
     return positions
   }
   pointsAssement(newgame=false){
+    console.log("Fresh = " + newgame)
     let points={}
     if(newgame){
       points={
@@ -98,7 +111,8 @@ class Main extends React.Component{
         nextLevel:60,
         dungeon:0,
         levelMultiplier:1,
-        totalEnemyPower:2500
+        totalEnemyPower:2500,
+        totalDamageInflicted:0
       }
     }
     return points;
@@ -202,61 +216,80 @@ class Main extends React.Component{
               allPoints:pointsCopy
             })
             positionsObj.allPositions.splice(indexOfAllPositions,1)
+            positionsObj.weapon=""
             this.setNewPosition(positionsObj,newpos)
             break;
           case "dungeon":
             pointsCopy.dungeon++;
             this.setState({
               allPoints:pointsCopy,
-              dungeonChange:true
-            },this.newGridLoad())
-            break;
+              dungeonChange:true,
+              modal:true
+            },this.newGridLoad(false))
+            return;
           case "enemies":
             let damageInflicted = pointsCopy.attack*(pointsCopy.level/5);
             let damageTaken = (pointsCopy.dungeon*4)+16;
             let enemiesLeft = positionsObj.enemies.length
 
-            let totalBoardDamageLeft = enemiesLeft*((pointsCopy.dungeon*4)+16)
-            let predictiveDamage = damageInflicted*enemiesLeft
-            let enemiesLeftPercent = (enemiesLeft)/5
-            if(enemiesLeftPercent===1){enemiesLeftPercent=.9}
-            pointsCopy.totalEnemyPower-=damageInflicted;
-            pointsCopy.health-=damageTaken;
-            pointsCopy.nextLevel-=(pointsCopy.dungeon*20)+10;
-            if(pointsCopy.nextLevel<=0){
-              pointsCopy.level++;
-              pointsCopy.nextLevel = (pointsCopy.dungeon*10)+60
+            //small interpolation prediction based on the end of the dungeon level
+            let predictiveDamage = function(dungeon){
+              if(dungeon===0){
+                return 14*(1+Math.random());
+              }
+              if(dungeon===1){
+                return 70*(1+Math.random());
+              }
+              if(dungeon===2){
+                return 227*(1+Math.random());
+              }
+              if(dungeon ===3){
+                return 705*(1+Math.random())
+              }
+              if(dungeon===4){
+                return 1734*(1+Math.random())
+              }
             }
+            let damageNeeded=predictiveDamage(pointsCopy.dungeon)/enemiesLeft
+            pointsCopy.totalEnemyPower-=damageInflicted;
+            pointsCopy.totalDamageInflicted+=damageInflicted;
+            pointsCopy.health-=damageTaken;
+            if(pointsCopy.health<0){
+              this.setState({
+                dungeonChange:true
+              },this.newGridLoad(true))
+            return;}
             this.setState({
               allPoints:pointsCopy
             })
-            console.log("predictiveDamage " + predictiveDamage)
-            console.log("totalBoardDamageLeft " +totalBoardDamageLeft)
-            console.log("1-enemiesLeftPercent " + (1-enemiesLeftPercent))
-            if((predictiveDamage/totalBoardDamageLeft)>(1-enemiesLeftPercent)){
+            console.log("totalDamageInflicted " + pointsCopy.totalDamageInflicted)
+            console.log("damageNeeded " + damageNeeded)
+            if (pointsCopy.totalDamageInflicted>damageNeeded){
+              pointsCopy.nextLevel-=(pointsCopy.dungeon*20)+10;
+              if(pointsCopy.nextLevel<=0){
+                pointsCopy.level++;
+                pointsCopy.nextLevel = (pointsCopy.dungeon*10)+60
+              }
+              this.setState({
+                allPoints:pointsCopy
+              })
               positionsObj.allPositions.splice(indexOfAllPositions,1)
               let indexOfEnemy = positionsObj.enemies.indexOf(newpos)
               positionsObj.enemies.splice(indexOfEnemy,1)
               this.setNewPosition(positionsObj,newpos)
             }
+
+            break;
+          case "dragon":
+          this.setState({
+            dungeonChange:true
+          },this.newGridLoad(true))
             break;
           default:
 
         }
       }
     }
-  }
-  visibleArea(oldposition,newPosition){
-      let yDifferential = newPosition[0]-oldposition[0]
-      let playerPosition = $("#"+newPosition[0]+"_"+newPosition[1]).position();
-      if(!playerPosition){return}//out of bounds jquery returns undefined
-      console.log("Div Holder Position ")
-      console.log($("#elementHolder").position())
-      console.log("player Position ")
-      console.log(playerPosition)
-      if(yDifferential!==0){
-        $("#elementHolder").scrollTop(this.state.yScroll);
-      }
   }
 
   render(){
@@ -266,7 +299,7 @@ class Main extends React.Component{
     }
     return(
       <div>
-        <PlayerDisplay main={this.state.allPoints}/>
+        <PlayerDisplay main={this.state.allPoints} modalDisplay={this.state.modal}/>
         <div key={this.state.dungeonChange} id="elementHolder" tabIndex="0" style={holderStyling} onKeyDown={(e)=>this.playerMovement(e)}>
             <GridMaker
               refresh = {this.state.dungeonChange}

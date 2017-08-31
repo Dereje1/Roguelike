@@ -27,6 +27,7 @@ class GridMaker extends React.Component{
           else if(idConstruct===this.props.positions.player){bcol="blue"}
           else if(idConstruct===this.props.positions.weapon){bcol="orange"}
           else if(idConstruct===this.props.positions.dungeon){bcol="purple"}
+          else if(idConstruct===this.props.positions.dragon){bcol="#ff69b4"}
           else if(this.props.positions.food.includes(idConstruct)){bcol="green"}
           else if(this.props.positions.enemies.includes(idConstruct)){bcol="red"}
           else{bcol="white"}

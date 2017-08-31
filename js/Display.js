@@ -5,6 +5,7 @@ class PlayerDisplay extends React.Component{
   render(){
     return(
       <div id="displayStats">
+        <BootsrapModal status={this.props.modalDisplay}/>
         <p>Helath = {this.props.main.health}</p>
         <p>Weapon = {this.props.main.weapon}</p>
         <p>Attack = {this.props.main.attack}</p>
@@ -13,5 +14,21 @@ class PlayerDisplay extends React.Component{
         <p>Dungeon = {this.props.main.dungeon}</p>
       </div>
     )
+  }
+}
+
+class BootsrapModal extends React.Component{
+  constructor(props){
+    super(props)
+  }
+  render(){
+    if (this.props.status){
+      return(
+          <h1>Wait for modal</h1>
+      )
+    }
+    else{
+      return null
+    }
   }
 }
