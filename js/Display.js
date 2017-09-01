@@ -17,7 +17,7 @@ class PlayerDisplay extends React.Component{
           />
         <div id="playerTask">
           <h1>Kill the boss in dungeon 4      </h1>
-          <Button onClick={this.props.lightSwitch}>Lights</Button>
+          <Button onClick={this.props.lightSwitch}>{this.props.lights ? "Lights Off" : "Lights On"}</Button>
         </div>
         <div id="playerstats">
           <h4>Health = {this.props.main.health+"     "}</h4>

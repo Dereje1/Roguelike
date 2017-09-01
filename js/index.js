@@ -403,6 +403,7 @@ class Main extends React.Component{
           modalDisplay={this.state.modal}
           modalContinue={this.continueGame}
           lightSwitch={this.toggleLights}
+          lights={this.state.lights}
           />
         <div key={this.state.dungeonChange} id="elementHolder" tabIndex="0" style={holderStyling} onKeyDown={(e)=>this.playerMovement(e)}>
             <GridMaker
@@ -411,7 +412,6 @@ class Main extends React.Component{
               elementSize={this.state.elementSize}
               positions={this.state.positionsOccupied}
               walls = {this.state.walls}
-              lights={this.state.lights}
               loadSignalBack={()=>this.setState({dungeonChange:false})}
             >
             </GridMaker>
