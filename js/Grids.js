@@ -9,8 +9,9 @@ class GridMaker extends React.Component{
     this.props.loadSignalBack()
   }
   shouldComponentUpdate(props,nextProps){
-    //if(this.props.refresh){return true;}
-    //else{return false;}
+    //this component should run only if refresh is true
+    if(this.props.refresh){return true;}
+    else{return false;}
   }
   elementbuilder(){
     //builds all cells
@@ -22,7 +23,7 @@ class GridMaker extends React.Component{
       for(let j=0;j<this.props.elementSize;j++){
           //construct id string cell coords
           let idConstruct = i.toString()+"_"+j.toString();
-          //set color of cell if alive
+          //set color of cell for different game objects
           if(this.props.walls.includes(idConstruct)){bcol="grey"}
           else if(idConstruct===this.props.positions.player){bcol="blue",bord=""}
           else if(idConstruct===this.props.positions.weapon){bcol="orange",bord=""}

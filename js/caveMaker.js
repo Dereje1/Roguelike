@@ -1,7 +1,7 @@
-
+//makes cave walls an extension of the logic from game of life project
 function cellAutomata(boxSize){
-  let allWalls = initialWall(boxSize,0.48);
-  for (let i=0;i<5;i++){
+  let allWalls = initialWall(boxSize,0.48);//probability param for wall
+  for (let i=0;i<5;i++){//run cellAutomata 5 times
     allWalls = findWalledCells(allWalls,boxSize,i)
   }
   let floodFilledWalls = floodFill(allWalls,boxSize);
@@ -16,17 +16,12 @@ function findWalledCells(allWalls,boxSize,i){
   for(let i=0;i<boxSize;i++){
     for(let j=0;j<boxSize;j++){
       let cellId = i.toString()+"_"+j.toString();
-      //find total liveNeighbours for each and every cell , even if dead
-      //this is probably what is taxing the most computation time
-      //look for improvements here!!
       let totalwalledNb = walledNeighbours(cellId,allWalls,boxSize)
-      //if((totalwalledNb>3)&&(totalwalledNb<2)){break;}
-      //if target cell is already alive
       if(allWalls.includes(cellId)){
         if (totalwalledNb >= 4){newState.push(cellId)}
       }
-      else{//if it is dead
-        switch (i) {
+      else{
+        switch (i) {//trying to make walls more realistic for the different automata iterations
           case (i===4):
                 if((totalwalledNb>=5)||(totalwalledNb<=2)){
                   newState.push(cellId)
@@ -49,9 +44,7 @@ function findWalledCells(allWalls,boxSize,i){
   return newState;
 }
 
-function walledNeighbours(cell,alive,boxSize){//finds live neighbours for a given cell
-    //first needs to find all 8 neighbours
-    //then test to see if any of them are alive, if so send total count
+function walledNeighbours(cell,alive,boxSize){//finds walled neighbours for a given cell
     let filteredNeigbhours=possibleNeighbours(cell,boxSize).filter(function(z){
      if(alive.includes(z)){return z}
     })
@@ -100,6 +93,8 @@ function possibleNeighbours(cell,boxSize,wrap=true){
   return possibleNeighbours;
 }
 function initialWall(boxSize,p){
+  //initial random placement of walls
+  //set wall probability , p for different results
   let newState=[]
   for(let i=0;i<boxSize;i++){
     for(let j=0;j<boxSize;j++){
@@ -113,7 +108,7 @@ function initialWall(boxSize,p){
 function floodFill(allwalls,boxSize){
   let allDisjoint=[];
   let disjoint=[];
-  let copyOfWalls = allwalls.slice()
+  let copyOfWalls = allwalls.slice()//don't modify original walls
   let openSpace=0;
   for(let i=0;i<boxSize;i++){
     for(let j=0;j<boxSize;j++){
@@ -132,6 +127,7 @@ function floodFill(allwalls,boxSize){
   return findBestPath()
 
   function findBestPath(){
+    //returns maximum of all disjoints found
     let longestPathWay=0;
     let floodFilledWalls =[]
     let disjointArrLength=allDisjoint.map(function(pathway){
@@ -171,6 +167,7 @@ function floodFill(allwalls,boxSize){
       }
   }
 }
+
 function floodFillTroublShoot(finalwalls,allDisjoint){
   //run this function to trouble shoot the flood filling techniques
   $( document ).ready(function() {

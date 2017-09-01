@@ -2,15 +2,16 @@ class Main extends React.Component{
   constructor(props){
     super(props)
     this.state={
-      walls:[],//array collects all live cell positions
+      walls:[],
       holderSize:800,
-      elementSize:40,//grid elements per board
+      elementSize:40,
       lights:false,
       positionsOccupied:{},
       allPoints:{},
       dungeonChange: false,
       modal:[false,""]
     }
+    //bindings
     this.newGridLoad=this.newGridLoad.bind(this)
     this.gamePlay=this.gamePlay.bind(this)
     this.placeGameObjects=this.placeGameObjects.bind(this)
@@ -20,18 +21,19 @@ class Main extends React.Component{
 
 
   componentWillMount(){
-    console.log("will mount")
+    //call grid load with fresh mount
     this.newGridLoad(true)
   }
   componentDidMount(){
     if(!this.state.lights){this.visibilityOff()}
   }
   componentDidUpdate(){
+    //on every update
     $("#elementHolder").scrollTop(this.state.positionsOccupied.yScroll);
     $('#elementHolder').focus();
     if(!this.state.lights){this.visibilityOff()}
   }
-  toggleLights(){
+  toggleLights(){//turns on/off dungeon lights
     if(!this.state.lights){
       this.setState({
         lights:true
@@ -45,18 +47,19 @@ class Main extends React.Component{
   }
 
   newGridLoad(fresh=false){
-
-    console.log("making caves " + this.state.staging)
+    //create cave walls
     let walls = cellAutomata(this.state.elementSize);
     let wallPercent = walls.length/Math.pow(this.state.elementSize,2)
+    //loop again if too many walls(>50%)
     while (wallPercent>0.5){
       walls = cellAutomata(this.state.elementSize);
       wallPercent = walls.length/Math.pow(this.state.elementSize,2)
     }
-
+    //initiate game objects
     let allOccupiedPositions = this.placeGameObjects(walls);
+    //initiate game points
     let points = this.pointsAssement(fresh)
-    console.log(points)
+    //set board state
     this.setState({
       walls:walls,
       positionsOccupied:allOccupiedPositions,
@@ -66,7 +69,7 @@ class Main extends React.Component{
 
   }
 
-  continueGame(modalReason){
+  continueGame(modalReason){//executed upon cotinue from modal
     let updateType;
     if (modalReason==="Dungeon Up"){
       updateType=false;
@@ -74,71 +77,74 @@ class Main extends React.Component{
     else{
       updateType=true;
     }
+    //setting dungeonChange to true updates grid component
     this.setState({
       dungeonChange:true,
       modal:false
     },this.newGridLoad(updateType))
   }
 
-  placeGameObjects(walls){
-    let boxSizeArray = Array.apply(null, {length: this.state.elementSize}).map(Number.call, Number)
-    let allOccupied=[]
-    let positions={}
-    let food=[], enemies=[]
-    let player="",weapon="",dungeon="",dragon=""
+  placeGameObjects(walls){//place objects randomly
+      let boxSizeArray = Array.apply(null, {length: this.state.elementSize}).map(Number.call, Number)
+      let allOccupied=[]
+      let positions={}
+      let food=[], enemies=[]
+      let player="",weapon="",dungeon="",dragon=""
 
-    randomFind()
-    function randomFind(){
-        if(allOccupied.length===13){return;}
-        let y = boxSizeArray[Math.floor(Math.random() * boxSizeArray.length)]
-        let x = boxSizeArray[Math.floor(Math.random() * boxSizeArray.length)]
-        let stringCoords = y.toString()+"_"+x.toString()
-        if(!walls.includes(stringCoords)){
-          if(allOccupied.length===0){//trying to center player
-          //  if((y<2)||(y>37)){randomFind()}
+      randomFind()//recursive function to place objects without hitting walls and other objects
+      function randomFind(){
+          if(allOccupied.length===13){return;}//13 objects to place per dungeon
+          let y = boxSizeArray[Math.floor(Math.random() * boxSizeArray.length)]
+          let x = boxSizeArray[Math.floor(Math.random() * boxSizeArray.length)]
+          let stringCoords = y.toString()+"_"+x.toString()
+          if(!walls.includes(stringCoords)){
+            if(!allOccupied.includes(stringCoords)){
+              allOccupied.push(stringCoords)
+            }
           }
-          if(!allOccupied.includes(stringCoords)){
-            allOccupied.push(stringCoords)
-          }
-        }
-        randomFind()
-    }
+          randomFind()
+      }
+      //first random object is player
+      player = allOccupied.shift();
+      //set initial scroll for first display of player
+      let initialScroll = (parseInt(player.split("_")[0],10) * 20)-200;
+      if(initialScroll<0){initialScroll=0}
+      if(initialScroll>400){initialScroll=400}
+      $("#elementHolder").scrollTop(initialScroll);//scroll with jquery!
 
-    player = allOccupied.shift();
-    let initialScroll = (parseInt(player.split("_")[0],10) * 20)-200;
-    if(initialScroll<0){initialScroll=0}
-    if(initialScroll>400){initialScroll=400}
-    console.log("starting Position "+ player)
-    console.log("initialScroll "+ initialScroll)
-    $("#elementHolder").scrollTop(initialScroll);
-    let copyOccupied = allOccupied.slice();//copy because I want this value also in the state object
-    for(let i=0;i<5;i++){food.push(copyOccupied.shift())}
-    for(let i=0;i<5;i++){enemies.push(copyOccupied.shift())}
-    weapon = copyOccupied.shift()
-    if (this.state.allPoints.dungeon===4){
-      dragon = copyOccupied.shift()
-    }
-    else{
-      dungeon = copyOccupied.shift()
-    }
-
-    positions.player = player;
-    positions.food = food;
-    positions.enemies = enemies;
-    positions.weapon = weapon;
-    positions.dungeon = dungeon;
-    positions.dragon = dragon;
-    positions.allPositions = allOccupied;
-    positions.yScroll = initialScroll;
-    return positions
+      let copyOccupied = allOccupied.slice();//copy because I want this value to be also stored in the state object
+      //next 5 are health
+      for(let i=0;i<5;i++){food.push(copyOccupied.shift())}
+      //next 5 are enemies
+      for(let i=0;i<5;i++){enemies.push(copyOccupied.shift())}
+      //next is wa weapon upgrade
+      weapon = copyOccupied.shift()
+      //depending on dungeon next is dungeon change/ dragon
+      if (this.state.allPoints.dungeon===4){
+        dragon = copyOccupied.shift()
+      }
+      else{
+        dungeon = copyOccupied.shift()
+      }
+      //set and return positions object
+      positions.player = player;
+      positions.food = food;
+      positions.enemies = enemies;
+      positions.weapon = weapon;
+      positions.dungeon = dungeon;
+      positions.dragon = dragon;
+      positions.allPositions = allOccupied;
+      positions.yScroll = initialScroll;
+      return positions
   }
+
   pointsAssement(newgame=false){
-    console.log("Fresh = " + newgame)
+    //resets points / just maintains previous points
     let points={}
     if(newgame){
       points={
         health:100,
-        weapon:"Stick",
+        weapon:"Fists",
         attack:7,
         level:1,
         nextLevel:60,
@@ -155,6 +161,7 @@ class Main extends React.Component{
   }
   playerMovement(e){
     e.preventDefault()
+    //deep copy object and modify
     let positionsCopy = JSON.parse(JSON.stringify(this.state.positionsOccupied))
     let currentPlayerPosition = positionsCopy.player.split("_").map(function(z){
       return parseInt(z,10)
@@ -183,17 +190,16 @@ class Main extends React.Component{
         break;
       default:
         newPosition=currentPlayerPosition
-        console.log("Non arrow key press")
     }
     //console.log(newPosition)
 
     let newPositionString = newPosition[0]+"_"+newPosition[1];
     if(this.state.walls.includes(newPositionString)){
-      //console.log("out of bounds")
+      //console.log("wall met")
       return;
     }
     else if(positionsCopy.allPositions.includes(newPositionString)){
-      //console.log("out of bounds")
+      //console.log("Game object met")
       this.gamePlay(positionsCopy,newPositionString)
       return;
     }
@@ -210,6 +216,7 @@ class Main extends React.Component{
   }
 
   setNewPosition(positionsCopy,newPositionString){
+    //uses jquery to change css properties of movement cells
     $("#"+positionsCopy.player).css("background-color", "white")
 
     positionsCopy.player = newPositionString;
@@ -218,10 +225,12 @@ class Main extends React.Component{
     })
     $("#"+newPositionString).css("background-color", "blue")
     $("#elementHolder").scrollTop(this.state.positionsOccupied.yScroll);
+    //handle visibility if no lights
     if(!this.state.lights){this.visibilityOff()};
   }
 
   visibilityOff(){
+    //handles darkness using jquery to manipulate css for entire grid
     for (let i=0;i<this.state.elementSize;i++){
       for(let j=0;j<this.state.elementSize;j++){
         let cellId = i.toString()+"_"+j.toString();
@@ -238,6 +247,7 @@ class Main extends React.Component{
 
   }
   visibilityOn(){
+    //runs only once if light switch turned back on
     for (let i=0;i<this.state.elementSize;i++){
       for(let j=0;j<this.state.elementSize;j++){
         let cellId = i.toString()+"_"+j.toString();
@@ -248,6 +258,7 @@ class Main extends React.Component{
   }
 
   gamePlay(positionsObj,newpos){
+    //handles game play points distribution
     let positionKeys = Object.keys(positionsObj)
     let pointsCopy = JSON.parse(JSON.stringify(this.state.allPoints))
     let indexOfAllPositions = positionsObj.allPositions.indexOf(newpos)
@@ -255,9 +266,8 @@ class Main extends React.Component{
       if(positionKeys[i]==="allPositions"){continue}
       if(positionKeys[i]==="yScroll"){continue}
       if(positionsObj[positionKeys[i]].includes(newpos)){
-        console.log("this is a " + positionKeys[i])
         switch (positionKeys[i]) {
-          case "food":
+          case "food"://health object
             pointsCopy.health+=35
             this.setState({
               allPoints:pointsCopy
@@ -267,14 +277,14 @@ class Main extends React.Component{
             positionsObj.food.splice(indexOfFood,1)
             this.setNewPosition(positionsObj,newpos)
             break;
-          case "weapon":
+          case "weapon"://weapon upgrade
             pointsCopy.attack = pointsCopy.attack +(pointsCopy.levelMultiplier*7)
             pointsCopy.levelMultiplier++
             if(pointsCopy.levelMultiplier===2){pointsCopy.weapon="Brass Knuckles"}
-            else if(pointsCopy.levelMultiplier===3){pointsCopy.weapon="Serrated Dagger"}
+            else if(pointsCopy.levelMultiplier===3){pointsCopy.weapon="Nunchuks"}
             else if(pointsCopy.levelMultiplier===4){pointsCopy.weapon="Katana"}
-            else if(pointsCopy.levelMultiplier===5){pointsCopy.weapon="Reaper's Scythe"}
-            else{pointsCopy.weapon="Large Trout"}
+            else if(pointsCopy.levelMultiplier===5){pointsCopy.weapon="Composite Bow"}
+            else{pointsCopy.weapon="AK 47"}
             this.setState({
               allPoints:pointsCopy
             })
@@ -282,9 +292,10 @@ class Main extends React.Component{
             positionsObj.weapon=""
             this.setNewPosition(positionsObj,newpos)
             break;
-          case "dungeon":
+          case "dungeon"://dungeon up
             pointsCopy.dungeon++;
             $('#elementHolder').empty()
+            //calls modal from display component
             this.setState({
               allPoints:pointsCopy,
               modal:[true,"Dungeon Up","Going to Dungeon "+ pointsCopy.dungeon + ", press Continue to Build Map"]
@@ -295,7 +306,7 @@ class Main extends React.Component{
             let damageTaken = (pointsCopy.dungeon*4)+16;
             let enemiesLeft = positionsObj.enemies.length
             let dungeonCopy=pointsCopy.dungeon
-            //small interpolation prediction based on the end of the dungeon level
+            //spredict damage
             let predictiveDamage = function(dungeon){
               if(dungeon===0){
                 return 14*(1+Math.random());
@@ -328,8 +339,7 @@ class Main extends React.Component{
             this.setState({
               allPoints:pointsCopy
             })
-            console.log("totalDamageInflicted " + pointsCopy.totalDamageInflicted)
-            console.log("damageNeeded " + damageNeeded)
+            //only remove enemy if enough total damage has been done
             if (pointsCopy.totalDamageInflicted>damageNeeded){
               pointsCopy.nextLevel-=(pointsCopy.dungeon*20)+10;
               if(pointsCopy.nextLevel<=0){
@@ -344,7 +354,6 @@ class Main extends React.Component{
               positionsObj.enemies.splice(indexOfEnemy,1)
               this.setNewPosition(positionsObj,newpos)
             }
-
             break;
           case "dragon":
             damageInflicted = pointsCopy.attack*(pointsCopy.level/5);
@@ -411,7 +420,6 @@ class Main extends React.Component{
     )
   }
 }
-
 
 ReactDOM.render(
   <Main />,
