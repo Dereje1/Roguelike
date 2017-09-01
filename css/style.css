@@ -14,10 +14,22 @@ body .container-fluid #displayStats {
   color: white;
 }
 
+body .container-fluid #displayStats #playerTask {
+  display: inline-flex;
+  white-space: pre;
+}
+
+body .container-fluid #displayStats #playerstats {
+  display: inline-flex;
+  color: white;
+  white-space: pre;
+}
+
 body .container-fluid #elementHolder {
   margin: 0 auto;
-  background-color: grey;
+  background-color: #252525;
   overflow: hidden;
+  outline: none;
 }
 
 body .container-fluid #elementHolder .Elemental {
@@ -27,8 +39,6 @@ body .container-fluid #elementHolder .Elemental {
   float: left;
   background-color: white;
   display: inline-block;
-  border-style: none;
-  border-width: 0.5px;
   vertical-align: top;
 }
 

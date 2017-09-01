@@ -1,6 +1,6 @@
 
 function cellAutomata(boxSize){
-  let allWalls = initialWall(boxSize,0.50);
+  let allWalls = initialWall(boxSize,0.48);
   for (let i=0;i<5;i++){
     allWalls = findWalledCells(allWalls,boxSize,i)
   }

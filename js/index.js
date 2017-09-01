@@ -5,24 +5,43 @@ class Main extends React.Component{
       walls:[],//array collects all live cell positions
       holderSize:800,
       elementSize:40,//grid elements per board
-      staging:"Loading Map",
+      lights:false,
       positionsOccupied:{},
       allPoints:{},
       dungeonChange: false,
-      modal:false
+      modal:[false,""]
     }
     this.newGridLoad=this.newGridLoad.bind(this)
     this.gamePlay=this.gamePlay.bind(this)
     this.placeGameObjects=this.placeGameObjects.bind(this)
+    this.continueGame=this.continueGame.bind(this)
+    this.toggleLights=this.toggleLights.bind(this)
   }
+
 
   componentWillMount(){
     console.log("will mount")
     this.newGridLoad(true)
   }
+  componentDidMount(){
+    if(!this.state.lights){this.visibilityOff()}
+  }
   componentDidUpdate(){
     $("#elementHolder").scrollTop(this.state.positionsOccupied.yScroll);
     $('#elementHolder').focus();
+    if(!this.state.lights){this.visibilityOff()}
+  }
+  toggleLights(){
+    if(!this.state.lights){
+      this.setState({
+        lights:true
+      },this.visibilityOn())
+    }
+    else{
+      this.setState({
+        lights:false
+      },this.visibilityOff())
+    }
   }
 
   newGridLoad(fresh=false){
@@ -43,8 +62,22 @@ class Main extends React.Component{
       positionsOccupied:allOccupiedPositions,
       allPoints:points,
       dungeonChange:false,
-      staging:"Game Play"
     })
+
+  }
+
+  continueGame(modalReason){
+    let updateType;
+    if (modalReason==="Dungeon Up"){
+      updateType=false;
+    }
+    else{
+      updateType=true;
+    }
+    this.setState({
+      dungeonChange:true,
+      modal:false
+    },this.newGridLoad(updateType))
   }
 
   placeGameObjects(walls){
@@ -82,7 +115,7 @@ class Main extends React.Component{
     for(let i=0;i<5;i++){food.push(copyOccupied.shift())}
     for(let i=0;i<5;i++){enemies.push(copyOccupied.shift())}
     weapon = copyOccupied.shift()
-    if (this.state.allPoints.dungeon===3){
+    if (this.state.allPoints.dungeon===4){
       dragon = copyOccupied.shift()
     }
     else{
@@ -114,6 +147,9 @@ class Main extends React.Component{
         totalEnemyPower:2500,
         totalDamageInflicted:0
       }
+    }
+    else{
+      points=this.state.allPoints
     }
     return points;
   }
@@ -182,6 +218,33 @@ class Main extends React.Component{
     })
     $("#"+newPositionString).css("background-color", "blue")
     $("#elementHolder").scrollTop(this.state.positionsOccupied.yScroll);
+    if(!this.state.lights){this.visibilityOff()};
+  }
+
+  visibilityOff(){
+    for (let i=0;i<this.state.elementSize;i++){
+      for(let j=0;j<this.state.elementSize;j++){
+        let cellId = i.toString()+"_"+j.toString();
+        let currentPlayerPosition = this.state.positionsOccupied.player.split("_").map(function(z){
+          return parseInt(z,10)
+        });
+        if (i<currentPlayerPosition[0]-3){$("#"+cellId).css("visibility", "hidden")}
+        else if (i>currentPlayerPosition[0]+3){$("#"+cellId).css("visibility", "hidden")}
+        else if (j<currentPlayerPosition[1]-3){$("#"+cellId).css("visibility", "hidden")}
+        else if (j>currentPlayerPosition[1]+3){$("#"+cellId).css("visibility", "hidden")}
+        else{$("#"+cellId).css("visibility", "visible")}
+      }
+    }
+
+  }
+  visibilityOn(){
+    for (let i=0;i<this.state.elementSize;i++){
+      for(let j=0;j<this.state.elementSize;j++){
+        let cellId = i.toString()+"_"+j.toString();
+        $("#"+cellId).css("visibility", "visible")
+      }
+    }
+
   }
 
   gamePlay(positionsObj,newpos){
@@ -195,7 +258,7 @@ class Main extends React.Component{
         console.log("this is a " + positionKeys[i])
         switch (positionKeys[i]) {
           case "food":
-            pointsCopy.health+=30
+            pointsCopy.health+=35
             this.setState({
               allPoints:pointsCopy
             })
@@ -221,17 +284,17 @@ class Main extends React.Component{
             break;
           case "dungeon":
             pointsCopy.dungeon++;
+            $('#elementHolder').empty()
             this.setState({
               allPoints:pointsCopy,
-              dungeonChange:true,
-              modal:true
-            },this.newGridLoad(false))
-            return;
+              modal:[true,"Dungeon Up","Going to Dungeon "+ pointsCopy.dungeon + ", press Continue to Build Map"]
+            })
+            break;
           case "enemies":
             let damageInflicted = pointsCopy.attack*(pointsCopy.level/5);
             let damageTaken = (pointsCopy.dungeon*4)+16;
             let enemiesLeft = positionsObj.enemies.length
-
+            let dungeonCopy=pointsCopy.dungeon
             //small interpolation prediction based on the end of the dungeon level
             let predictiveDamage = function(dungeon){
               if(dungeon===0){
@@ -255,9 +318,12 @@ class Main extends React.Component{
             pointsCopy.totalDamageInflicted+=damageInflicted;
             pointsCopy.health-=damageTaken;
             if(pointsCopy.health<0){
+              pointsCopy= this.pointsAssement(true)
+              $('#elementHolder').empty()
               this.setState({
-                dungeonChange:true
-              },this.newGridLoad(true))
+                allPoints:pointsCopy,
+                modal:[true,"Dead","You got killed in dungeon "+ dungeonCopy + ", press Continue to start over"]
+              })
             return;}
             this.setState({
               allPoints:pointsCopy
@@ -281,9 +347,33 @@ class Main extends React.Component{
 
             break;
           case "dragon":
-          this.setState({
-            dungeonChange:true
-          },this.newGridLoad(true))
+            damageInflicted = pointsCopy.attack*(pointsCopy.level/5);
+            damageTaken = (pointsCopy.dungeon*4)+16;
+            pointsCopy.totalEnemyPower-=damageInflicted;
+            pointsCopy.totalDamageInflicted+=damageInflicted;
+            pointsCopy.health-=damageTaken;
+            if(pointsCopy.health<0){
+              pointsCopy= this.pointsAssement(true)
+              $('#elementHolder').empty()
+              this.setState({
+                allPoints:pointsCopy,
+                modal:[true,"Dead","You got killed by the Dragon, press Continue to start over"]
+              })
+            return;}
+            else if(pointsCopy.totalEnemyPower<0){
+              pointsCopy= this.pointsAssement(true)
+              $('#elementHolder').empty()
+              this.setState({
+                allPoints:pointsCopy,
+                modal:[true,"Win","You Killed the Dragon!, press Continue to start the game over"]
+              })
+            return;
+            }
+            else{
+              this.setState({
+                allPoints:pointsCopy
+              })
+            }
             break;
           default:
 
@@ -299,7 +389,12 @@ class Main extends React.Component{
     }
     return(
       <div>
-        <PlayerDisplay main={this.state.allPoints} modalDisplay={this.state.modal}/>
+        <PlayerDisplay
+          main={this.state.allPoints}
+          modalDisplay={this.state.modal}
+          modalContinue={this.continueGame}
+          lightSwitch={this.toggleLights}
+          />
         <div key={this.state.dungeonChange} id="elementHolder" tabIndex="0" style={holderStyling} onKeyDown={(e)=>this.playerMovement(e)}>
             <GridMaker
               refresh = {this.state.dungeonChange}
@@ -307,7 +402,7 @@ class Main extends React.Component{
               elementSize={this.state.elementSize}
               positions={this.state.positionsOccupied}
               walls = {this.state.walls}
-              cellRef={(input) => this.x = input }
+              lights={this.state.lights}
               loadSignalBack={()=>this.setState({dungeonChange:false})}
             >
             </GridMaker>

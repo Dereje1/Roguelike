@@ -9,13 +9,13 @@ class GridMaker extends React.Component{
     this.props.loadSignalBack()
   }
   shouldComponentUpdate(props,nextProps){
-    if(this.props.refresh){return true;}
-    else{return false;}
+    //if(this.props.refresh){return true;}
+    //else{return false;}
   }
   elementbuilder(){
     //builds all cells
     console.log("rendering all Grid Elements")
-    let x=[],bcol;
+    let x=[],bcol,bord="";
     //find element width
     let elementWidth = (this.props.holderSize/this.props.elementSize).toString()+"px"
     for (let i=0;i<this.props.elementSize;i++){
@@ -24,17 +24,18 @@ class GridMaker extends React.Component{
           let idConstruct = i.toString()+"_"+j.toString();
           //set color of cell if alive
           if(this.props.walls.includes(idConstruct)){bcol="grey"}
-          else if(idConstruct===this.props.positions.player){bcol="blue"}
-          else if(idConstruct===this.props.positions.weapon){bcol="orange"}
-          else if(idConstruct===this.props.positions.dungeon){bcol="purple"}
-          else if(idConstruct===this.props.positions.dragon){bcol="#ff69b4"}
-          else if(this.props.positions.food.includes(idConstruct)){bcol="green"}
-          else if(this.props.positions.enemies.includes(idConstruct)){bcol="red"}
-          else{bcol="white"}
+          else if(idConstruct===this.props.positions.player){bcol="blue",bord=""}
+          else if(idConstruct===this.props.positions.weapon){bcol="orange",bord=""}
+          else if(idConstruct===this.props.positions.dungeon){bcol="purple",bord=""}
+          else if(idConstruct===this.props.positions.dragon){bcol="red",bord="5px solid black"}
+          else if(this.props.positions.food.includes(idConstruct)){bcol="green",bord=""}
+          else if(this.props.positions.enemies.includes(idConstruct)){bcol="red",bord=""}
+          else{bcol="white",bord=""}
           //construct jsx and push
           let stylingDef = {background: bcol,
                             width:elementWidth,
                             height:elementWidth,
+                            border:bord,
                             }
           x.push(   <Cell
                      id={idConstruct}

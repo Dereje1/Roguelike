@@ -5,18 +5,27 @@ body{
   margin-top:20px;
   background-color:#252525;
   margin-bottom:2em;
-
   .container-fluid{
     margin-left: 5%;
     margin-right: 5%;
       #displayStats{
         text-align: center;
         color:white;
+        #playerTask{
+          display: inline-flex;
+          white-space:pre
+        }
+        #playerstats{
+          display: inline-flex;
+          color:white;
+          white-space:pre
+        }
       }
       #elementHolder{
         margin: 0 auto;
-        background-color: grey;
+        background-color: #252525;
         overflow:hidden;
+        outline: none;
           .Elemental{
             margin:0px;
             position:relative;
@@ -24,8 +33,8 @@ body{
             float: left;
             background-color: white;
             display: inline-block;
-            border-style: none;
-            border-width: 0.5px;
+            //border-style: none;
+            //border-width: 0.5px;
             vertical-align: top;
           }
       }

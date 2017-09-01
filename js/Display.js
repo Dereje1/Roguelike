@@ -1,30 +1,80 @@
 class PlayerDisplay extends React.Component{
   constructor(props){
     super(props)
+    this.modalClosed=this.modalClosed.bind(this)
+  }
+  modalClosed(x){
+    this.props.modalContinue(x)
   }
   render(){
+    let Button = ReactBootstrap.Button;
     return(
       <div id="displayStats">
-        <BootsrapModal status={this.props.modalDisplay}/>
-        <p>Helath = {this.props.main.health}</p>
-        <p>Weapon = {this.props.main.weapon}</p>
-        <p>Attack = {this.props.main.attack}</p>
-        <p>Level = {this.props.main.level}</p>
-        <p>Next Level = {this.props.main.nextLevel}</p>
-        <p>Dungeon = {this.props.main.dungeon}</p>
+        <BootstrapModal
+          key={this.props.modalDisplay[0]}
+          status={this.props.modalDisplay}
+          modalResponse={this.modalClosed}
+          />
+        <div id="playerTask">
+          <h1>Kill the boss in dungeon 4      </h1>
+          <Button onClick={this.props.lightSwitch}>Lights</Button>
+        </div>
+        <div id="playerstats">
+          <h4>Health = {this.props.main.health+"     "}</h4>
+          <h4>Weapon = {this.props.main.weapon+"     "}</h4>
+          <h4>Attack = {this.props.main.attack+"     "}</h4>
+          <h4>Level = {this.props.main.level+"     "}</h4>
+          <h4>Next Level = {this.props.main.nextLevel+"XP     "}</h4>
+          <h4>Dungeon = {this.props.main.dungeon+"     "}</h4>
+        </div>
       </div>
     )
   }
 }
 
-class BootsrapModal extends React.Component{
+class BootstrapModal extends React.Component{
   constructor(props){
     super(props)
+    this.close=this.close.bind(this)
+  }
+  componentWillMount(){
+    this.setState({ showModal: true });
+  }
+
+  shouldComponentUpdate(props,nextProps){
+    if(this.props.status[0]){return true;}
+    else{return false;}
+  }
+  close(){
+  this.setState({ showModal: false },this.props.modalResponse(this.props.status[1]));
+
+  }
+  modalfunction(){
+    let Modal = ReactBootstrap.Modal;
+    let Button = ReactBootstrap.Button;
+    let modalTitle= "Some title"
+    return(
+      <div id="modalformat">
+        <Modal show={this.state.showModal} onHide={this.close}>
+            <Modal.Header>
+              <Modal.Title>{this.props.status[1]}</Modal.Title>
+            </Modal.Header>
+
+            <Modal.Body>
+              {this.props.status[2]}
+            </Modal.Body>
+
+            <Modal.Footer>
+              <Button onClick={this.close}>Continue</Button>
+            </Modal.Footer>
+       </Modal>
+      </div>
+    )
   }
   render(){
-    if (this.props.status){
+    if (this.props.status[0]){
       return(
-          <h1>Wait for modal</h1>
+          <div>{this.modalfunction()}</div>
       )
     }
     else{
